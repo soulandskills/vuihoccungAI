@@ -34,8 +34,11 @@
         <span class="text-slate-300 hidden sm:inline">Bạn có thể sửa tên chủ đề, thêm/sửa/xóa bài học trực tiếp.</span>
       </div>
       <div class="flex items-center gap-2">
+        <button type="button" onclick="exportCleanStudentHTML()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-1" title="Tải xuống file index.html sạch chỉ dành cho học sinh">
+          🌐 Tải Web Cho Học Sinh
+        </button>
         <button type="button" onclick="exportDataToFile()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 border border-slate-700 transition">
-          💾 Xuất file JSON
+          💾 Xuất JSON
         </button>
         <label class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 border border-slate-700 cursor-pointer transition">
           📂 Nhập JSON
@@ -558,6 +561,198 @@
 
     function selectEmoji(emoji) {
       document.getElementById('lessonIconInput').value = emoji;
+    }
+
+    // Tải xuống file HTML thuần dành riêng cho học sinh (không chứa nút tải, thanh GV hay modal)
+    function exportCleanStudentHTML() {
+      var currentDataStr = JSON.stringify(APP_DATA, null, 2);
+      
+      var cleanHtml = '<!DOCTYPE html>\n' +
+'<html lang="vi">\n' +
+'<head>\n' +
+'  <meta charset="UTF-8">\n' +
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+'  <title>Vui Học Cùng AI - Tiểu Học</title>\n' +
+'  <script src="https://cdn.tailwindcss.com"><\/script>\n' +
+'  <style>\n' +
+'    body, * {\n' +
+'      font-family: \'Times New Roman\', Times, serif !important;\n' +
+'    }\n' +
+'  </style>\n' +
+'</head>\n' +
+'<body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col antialiased selection:bg-rose-100 selection:text-rose-600">\n' +
+'  <header class="bg-white border-b border-slate-100 sticky top-0 z-40 shadow-xs">\n' +
+'    <div class="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between">\n' +
+'      <div class="flex items-center gap-2.5 select-none">\n' +
+'        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl shadow-xs">\n' +
+'          🤖\n' +
+'        </div>\n' +
+'        <div>\n' +
+'          <div class="flex items-center gap-1.5">\n' +
+'            <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-tight">Vui Học Cùng AI</h1>\n' +
+'            <span class="bg-purple-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider">Tiểu Học</span>\n' +
+'          </div>\n' +
+'          <p class="text-[11px] text-slate-400 leading-tight">Cổng bài học & ứng dụng tương tác thông minh</p>\n' +
+'        </div>\n' +
+'      </div>\n' +
+'      <button type="button" id="soundToggleBtn" onclick="toggleSound()" class="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600 transition shadow-xs text-xs">\n' +
+'        🔊\n' +
+'      </button>\n' +
+'    </div>\n' +
+'  </header>\n\n' +
+'  <main class="max-w-5xl mx-auto px-4 py-3 flex-1 w-full space-y-3">\n' +
+'    <div class="rounded-xl bg-gradient-to-r from-emerald-600 via-green-500 to-teal-600 px-4 py-2.5 sm:px-5 sm:py-3 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 relative overflow-hidden">\n' +
+'      <div class="absolute -right-2 -bottom-3 text-white/10 text-5xl select-none pointer-events-none">🌿</div>\n' +
+'      <div class="relative z-10 flex flex-wrap items-center gap-2">\n' +
+'        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs text-[10px] font-bold tracking-wide">🌟 Chào mừng các em!</span>\n' +
+'        <h2 class="text-sm sm:text-base font-black tracking-tight leading-tight">Hôm nay lớp mình học khối mấy nào?</h2>\n' +
+'      </div>\n' +
+'      <p class="relative z-10 text-white/90 text-[11px] sm:text-xs font-medium">Chạm chọn Khối để mở ứng dụng AI nhé! 🚀</p>\n' +
+'    </div>\n\n' +
+'    <div>\n' +
+'      <div class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">\n' +
+'        <span>🔗</span> CHỌN KHỐI LỚP HỌC:\n' +
+'      </div>\n' +
+'      <div id="quickNavButtons" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5"></div>\n' +
+'    </div>\n\n' +
+'    <div id="gradesContainer" class="space-y-4"></div>\n' +
+'  </main>\n\n' +
+'  <footer class="max-w-5xl mx-auto px-4 py-8 text-center text-xs text-slate-400">\n' +
+'    <p>© 2026 Vui Học Cùng AI • Dành riêng cho học sinh Tiểu học</p>\n' +
+'  </footer>\n\n' +
+'  <script>\n' +
+'    var APP_DATA = ' + currentDataStr + ';\n' +
+'    var THEME_STYLES = ' + JSON.stringify(THEME_STYLES) + ';\n' +
+'    var activeGradeIndex = 0;\n' +
+'    var activeTopicKey = null;\n' +
+'    var soundEnabled = true;\n\n' +
+'    function playTone(freq, duration) {\n' +
+'      if (!soundEnabled) return;\n' +
+'      try {\n' +
+'        var AudioContext = window.AudioContext || window.webkitAudioContext;\n' +
+'        if (!AudioContext) return;\n' +
+'        var ctx = new AudioContext();\n' +
+'        var osc = ctx.createOscillator();\n' +
+'        var gain = ctx.createGain();\n' +
+'        osc.type = "sine";\n' +
+'        osc.frequency.setValueAtTime(freq, ctx.currentTime);\n' +
+'        gain.gain.setValueAtTime(0.08, ctx.currentTime);\n' +
+'        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);\n' +
+'        osc.connect(gain);\n' +
+'        gain.connect(ctx.destination);\n' +
+'        osc.start();\n' +
+'        osc.stop(ctx.currentTime + duration);\n' +
+'      } catch(e) {}\n' +
+'    }\n\n' +
+'    function toggleSound() {\n' +
+'      soundEnabled = !soundEnabled;\n' +
+'      var btn = document.getElementById("soundToggleBtn");\n' +
+'      if (btn) btn.innerText = soundEnabled ? "🔊" : "🔇";\n' +
+'    }\n\n' +
+'    function renderPortal() {\n' +
+'      renderQuickButtons();\n' +
+'      renderActiveGradeContent();\n' +
+'    }\n\n' +
+'    function renderQuickButtons() {\n' +
+'      var nav = document.getElementById("quickNavButtons");\n' +
+'      if (!nav) return;\n' +
+'      nav.innerHTML = "";\n' +
+'      var btnConfigs = [\n' +
+'        { label: "Khối 1", icon: "🤖", border: "border-rose-200", text: "text-rose-600", activeBg: "bg-rose-500 text-white border-rose-500" },\n' +
+'        { label: "Khối 2", icon: "🦁", border: "border-amber-200", text: "text-amber-600", activeBg: "bg-amber-500 text-white border-amber-500" },\n' +
+'        { label: "Khối 3", icon: "🚀", border: "border-emerald-200", text: "text-emerald-600", activeBg: "bg-emerald-500 text-white border-emerald-500" },\n' +
+'        { label: "Khối 4", icon: "💻", border: "border-blue-200", text: "text-blue-600", activeBg: "bg-blue-500 text-white border-blue-500" },\n' +
+'        { label: "Khối 5", icon: "🧠", border: "border-purple-200", text: "text-purple-600", activeBg: "bg-purple-500 text-white border-purple-500" }\n' +
+'      ];\n' +
+'      btnConfigs.forEach(function(cfg, idx) {\n' +
+'        var isSelected = (activeGradeIndex === idx);\n' +
+'        var btn = document.createElement("button");\n' +
+'        btn.type = "button";\n' +
+'        btn.onclick = function() { toggleSelectGrade(idx); };\n' +
+'        var baseCls = "py-3 px-4 rounded-2xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xs active:scale-95 ";\n' +
+'        if (idx === 4) baseCls += "col-span-2 sm:col-span-1 ";\n' +
+'        btn.className = isSelected ? (baseCls + cfg.activeBg + " shadow-md scale-102") : (baseCls + "bg-white " + cfg.border + " " + cfg.text + " hover:bg-slate-50");\n' +
+'        btn.innerHTML = "<span>" + cfg.icon + "</span> " + cfg.label;\n' +
+'        nav.appendChild(btn);\n' +
+'      });\n' +
+'    }\n\n' +
+'    function renderActiveGradeContent() {\n' +
+'      var container = document.getElementById("gradesContainer");\n' +
+'      if (!container) return;\n' +
+'      container.innerHTML = "";\n' +
+'      if (activeGradeIndex === null || !APP_DATA[activeGradeIndex]) return;\n' +
+'      var gIdx = activeGradeIndex;\n' +
+'      var item = APP_DATA[gIdx];\n' +
+'      var st = THEME_STYLES[item.theme] || THEME_STYLES.rose;\n' +
+'      var totalLessons = item.topics.reduce(function(acc, t) { return acc + (t.lessons ? t.lessons.length : 0); }, 0);\n' +
+'      var gradeCard = document.createElement("div");\n' +
+'      gradeCard.className = "bg-white rounded-3xl border-2 " + st.border + " overflow-hidden shadow-sm transition-all duration-300";\n' +
+'      var bodyHtml = "<div class=\'p-4 sm:p-5 bg-white space-y-3\'>";\n' +
+'      item.topics.forEach(function(topic, tIdx) {\n' +
+'        var topicKey = gIdx + "-" + tIdx;\n' +
+'        var isTopicOpen = (activeTopicKey === topicKey);\n' +
+'        var lessonCount = topic.lessons ? topic.lessons.length : 0;\n' +
+'        var lessonsGridHtml = "";\n' +
+'        if (isTopicOpen) {\n' +
+'          lessonsGridHtml = "<div class=\'p-4 border-t border-slate-100 bg-slate-50/50\'><div class=\'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5\'>";\n' +
+'          if (lessonCount > 0) {\n' +
+'            topic.lessons.forEach(function(lesson) {\n' +
+'              lessonsGridHtml += "<div class=\'bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition-all\'>" +\n' +
+'                "<div><div class=\'w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl mb-2.5\'>" + (lesson.icon || "📱") + "</div>" +\n' +
+'                "<h4 class=\'font-bold text-slate-800 text-sm mb-1 leading-snug line-clamp-2\'>" + lesson.title + "</h4>" +\n' +
+'                (lesson.desc ? "<p class=\'text-[11px] text-slate-400 font-medium mb-3 line-clamp-2\'>" + lesson.desc + "</p>" : "<div class=\'mb-3\'></div>") + "</div>" +\n' +
+'                "<a href=\'" + lesson.url + "\' target=\'_blank\' rel=\'noopener noreferrer\' class=\'w-full py-2.5 px-3 " + st.btnPlay + " text-xs font-bold text-center rounded-xl shadow-xs block transition-all flex items-center justify-center gap-1.5 active:scale-95\'><span>▶ MỞ ỨNG DỤNG</span></a></div>";\n' +
+'            });\n' +
+'          } else {\n' +
+'            lessonsGridHtml += "<div class=\'col-span-full py-6 text-center text-slate-400 text-xs font-semibold\'>📱 Ứng dụng đang được cập nhật...</div>";\n' +
+'          }\n' +
+'          lessonsGridHtml += "</div></div>";\n' +
+'        }\n' +
+'        bodyHtml += "<div class=\'rounded-2xl border border-slate-200/90 overflow-hidden bg-white shadow-xs\'>" +\n' +
+'          "<div onclick=\'toggleTopic(" + gIdx + ", " + tIdx + ")\' class=\'p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors select-none\'>" +\n' +
+'          "<div class=\'flex items-center gap-3\'><div class=\'w-7 h-7 rounded-lg bg-slate-100 font-bold text-xs text-slate-700 flex items-center justify-center\'>" + (tIdx + 1) + "</div>" +\n' +
+'          "<span class=\'font-bold text-slate-800 text-sm\'>" + topic.title + "</span><span class=\'text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full\'>" + lessonCount + " bài</span></div>" +\n' +
+'          "<div class=\'text-slate-400 text-xs transition-transform " + (isTopicOpen ? "rotate-180" : "") + "\'>▼</div></div>" + lessonsGridHtml + "</div>";\n' +
+'      });\n' +
+'      bodyHtml += "</div>";\n' +
+'      gradeCard.innerHTML = "<div class=\'" + st.headerOpen + " px-4 py-2 flex items-center justify-between select-none rounded-t-3xl\'>" +\n' +
+'        "<div class=\'flex items-center gap-2\'><span class=\'text-xs font-bold uppercase tracking-wider opacity-90\'>" + item.title.split(":")[0] + "</span>" +\n' +
+'        "<span class=\'text-[11px] opacity-75 font-semibold\'>• " + totalLessons + " bài học</span></div>" +\n' +
+'        "<button type=\'button\' onclick=\'closeActiveGrade()\' class=\'w-6 h-6 rounded-lg bg-black/15 hover:bg-black/25 flex items-center justify-center text-white text-xs font-bold transition-all\'>✕</button></div>" + bodyHtml;\n' +
+'      container.appendChild(gradeCard);\n' +
+'    }\n\n' +
+'    function toggleSelectGrade(gIdx) {\n' +
+'      playTone(500, 0.05);\n' +
+'      activeGradeIndex = (activeGradeIndex === gIdx) ? null : gIdx;\n' +
+'      activeTopicKey = null;\n' +
+'      renderPortal();\n' +
+'    }\n\n' +
+'    function closeActiveGrade() {\n' +
+'      activeGradeIndex = null;\n' +
+'      activeTopicKey = null;\n' +
+'      renderPortal();\n' +
+'    }\n\n' +
+'    function toggleTopic(gIdx, tIdx) {\n' +
+'      playTone(550, 0.05);\n' +
+'      var key = gIdx + "-" + tIdx;\n' +
+'      activeTopicKey = (activeTopicKey === key) ? null : key;\n' +
+'      renderPortal();\n' +
+'    }\n\n' +
+'    window.onload = function() {\n' +
+'      renderPortal();\n' +
+'    };\n' +
+'  <\/script>\n' +
+'</body>\n' +
+'</html>';
+
+      var blob = new Blob([cleanHtml], { type: "text/html;charset=utf-8" });
+      var downloadAnchor = document.createElement('a');
+      downloadAnchor.href = URL.createObjectURL(blob);
+      downloadAnchor.download = "index.html";
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(downloadAnchor.href);
     }
 
     // Xuất / Nhập JSON
