@@ -550,7 +550,18 @@
 
     // Tải xuống toàn bộ file HTML hiện tại (bao gồm cả dữ liệu & admin mode)
     function exportFullHTML() {
-      var fullContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      // Cập nhật lại mảng DEFAULT_DATA trong source code mẫu thành dữ liệu APP_DATA hiện tại trước khi xuất file
+      var pageHtml = document.documentElement.outerHTML;
+      
+      // Thay thế biến DEFAULT_DATA cũ bằng dữ liệu APP_DATA mới nhất
+      var oldDataPattern = /var DEFAULT_DATA = \[[\s\S]*?\];\s*\/\/\s*Cấu hình bảng màu/;
+      var newDataString = 'var DEFAULT_DATA = ' + JSON.stringify(APP_DATA, null, 2) + ';\n    \/\/ Cấu hình bảng màu';
+      
+      if (oldDataPattern.test(pageHtml)) {
+        pageHtml = pageHtml.replace(oldDataPattern, newDataString);
+      }
+
+      var fullContent = '<!DOCTYPE html>\n' + pageHtml;
       var blob = new Blob([fullContent], { type: 'text/html;charset=utf-8' });
       var downloadAnchor = document.createElement('a');
       downloadAnchor.href = URL.createObjectURL(blob);
